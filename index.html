@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trivia Hero | Daily Challenge</title>
     
+    <meta name="theme-color" content="#1a2a6c">
+    
     <meta name="description" content="Play the Ultimate Trivia Hero challenge! 25 questions, daily leaderboard, and epic streaks.">
     <meta property="og:title" content="Trivia Hero Challenge">
     <meta property="og:description" content="Can you beat my high score? Play now!">
@@ -79,7 +81,10 @@
             display: none;
             transform: rotate(15deg);
             z-index: 10;
+            animation: bounce 0.5s infinite alternate;
         }
+
+        @keyframes bounce { from { transform: scale(1) rotate(15deg); } to { transform: scale(1.1) rotate(20deg); } }
 
         .btn-main {
             background: var(--primary);
@@ -98,35 +103,20 @@
 
         .btn-main:active { transform: translateY(3px); box-shadow: 0 2px 0 #b38f00; }
         
-        .btn-share {
-            background: #25D366;
-            color: white;
-            box-shadow: 0 5px 0 #128C7E;
-            margin-top: 15px;
-        }
+        .btn-share { background: #25D366; color: white; box-shadow: 0 5px 0 #128C7E; margin-top: 15px; }
 
         .option { background: white; color: #333; margin: 10px 0; }
         .correct { background: var(--success) !important; color: white !important; }
         .wrong { background: var(--danger) !important; color: white !important; }
 
-        input {
-            width: 100%;
-            padding: 15px;
-            border-radius: 10px;
-            border: none;
-            margin-bottom: 10px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
+        #timer { font-size: 28px; font-weight: 900; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .timer-low { color: #ff4444; animation: shake 0.2s infinite; }
 
-        .leader-row {
-            background: rgba(255,255,255,0.1);
-            padding: 8px 15px;
-            margin: 5px 0;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
+        @keyframes shake { 0% { transform: translateX(0); } 50% { transform: translateX(-2px); } 100% { transform: translateX(2px); } }
+
+        input { width: 100%; padding: 15px; border-radius: 10px; border: none; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; }
+
+        .leader-row { background: rgba(255,255,255,0.1); padding: 8px 15px; margin: 5px 0; border-radius: 8px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -143,10 +133,10 @@
 
     <div id="game-screen" style="display:none;">
         <div class="progress-container"><div id="progress-bar"></div></div>
-        <div id="timer" style="font-size: 24px; font-weight: bold;">15</div>
-        <div id="question" style="margin: 20px 0; font-size: 1.2rem;"></div>
+        <div id="timer">15</div>
+        <div id="question" style="margin: 20px 0; font-size: 1.25rem; font-weight: 600;"></div>
         <div id="options"></div>
-        <div id="reaction" style="font-size: 2rem;"></div>
+        <div id="reaction" style="font-size: 2.5rem; height: 50px;"></div>
     </div>
 
     <div id="result-screen" style="display:none;">
@@ -161,7 +151,7 @@
 const questions = [
     { question: "What is the chemical symbol for Gold?", options: ["Au", "Ag", "Gd", "Go"], answer: 0 },
     { question: "Which planet has the most moons?", options: ["Earth", "Mars", "Jupiter", "Saturn"], answer: 3 },
-    { question: "Who wrote 'Romeo and Juliet'?", options: ["Charles Dickens", "William Shakespeare", "Mark Twain", "Jane Austen"], answer: 1 },
+    { question: "Who wrote 'Romeo and Juliet'?", options: ["Dickens", "Shakespeare", "Twain", "Austen"], answer: 1 },
     { question: "What is the square root of 144?", options: ["10", "11", "12", "14"], answer: 2 },
     { question: "Which country hosted the 2020 Olympics?", options: ["China", "Japan", "Brazil", "UK"], answer: 1 },
     { question: "What gas do plants absorb?", options: ["Oxygen", "Nitrogen", "CO2", "Hydrogen"], answer: 2 },
@@ -231,19 +221,21 @@ function checkAnswer(idx, btn) {
 
     if (idx === correct) {
         btn.classList.add("correct");
-        score += (10 + streak);
+        // NEW: Fast Answer Bonus (timeLeft x 2) + Streak
+        let points = 10 + (timeLeft * 2) + (streak * 5);
+        score += points;
         streak++;
-        document.getElementById("reaction").innerText = "🔥";
+        document.getElementById("reaction").innerText = timeLeft > 10 ? "⚡ FAST!" : "🔥 NICE!";
         if (streak >= 3) {
             document.getElementById("combo-badge").style.display = "block";
-            document.getElementById("combo-badge").innerText = streak + "x!";
+            document.getElementById("combo-badge").innerText = streak + "x STREAK";
         }
     } else {
         btn.classList.add("wrong");
         all[correct].classList.add("correct");
         streak = 0;
         document.getElementById("combo-badge").style.display = "none";
-        document.getElementById("reaction").innerText = "😵";
+        document.getElementById("reaction").innerText = "😵 OUCH";
     }
 
     setTimeout(() => {
@@ -254,10 +246,13 @@ function checkAnswer(idx, btn) {
 
 function resetTimer() {
     clearInterval(timer);
-    document.getElementById("timer").innerText = timeLeft;
+    const timerDisplay = document.getElementById("timer");
+    timerDisplay.classList.remove("timer-low");
+    timerDisplay.innerText = timeLeft;
     timer = setInterval(() => {
         timeLeft--;
-        document.getElementById("timer").innerText = timeLeft;
+        timerDisplay.innerText = timeLeft;
+        if (timeLeft <= 5) timerDisplay.classList.add("timer-low");
         if (timeLeft <= 0) {
             clearInterval(timer);
             streak = 0;
@@ -270,7 +265,7 @@ function resetTimer() {
 function endGame() {
     document.getElementById("game-screen").style.display = "none";
     document.getElementById("result-screen").style.display = "block";
-    document.getElementById("final-score").innerText = `${playerName}, Score: ${score}`;
+    document.getElementById("final-score").innerText = `${playerName}, Final Score: ${score}`;
     saveScore();
     showLeaderboards();
 }
@@ -285,12 +280,12 @@ function saveScore() {
 function showLeaderboards() {
     const lb = JSON.parse(localStorage.getItem("leaderboard")) || [];
     const html = lb.slice(0, 5).map((p, i) => `<div class="leader-row"><span>#${i+1} ${p.name}</span><span>${p.score}</span></div>`).join('');
-    document.getElementById("start-leaderboard").innerHTML = lb.length ? "<h3>Daily Top 5</h3>" + html : "";
+    document.getElementById("start-leaderboard").innerHTML = lb.length ? "<h3>Daily Top 5</h3>" + html : "<h3>Be the first Hero!</h3>";
     document.getElementById("leaderboard-final").innerHTML = "<h3>Daily Rankings</h3>" + html;
 }
 
 function shareScore() {
-    const text = `🎮 I just scored ${score} on Trivia Hero! Can you beat my streak? 🔥 Play here: ${window.location.href}`;
+    const text = `🎮 I just scored ${score} on Trivia Hero! My speed bonus was insane. 🔥 Can you beat me? Play here: ${window.location.href}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 
