@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trivia Hero | Extreme Edition</title>
+    <title>Trivia Hero | Daily Challenge</title>
     
     <meta name="theme-color" content="#1a2a6c">
     
+    <meta name="description" content="Play the Ultimate Trivia Hero challenge! 25 questions, daily leaderboard, and epic streaks.">
+    <meta property="og:title" content="Trivia Hero Challenge">
+    <meta property="og:description" content="Can you beat my high score? Play now!">
+    <meta property="og:type" content="website">
+
     <style>
         :root {
             --primary: #ffcc00;
             --secondary: #00d4ff;
-            --lightning: #a020f0;
             --success: #28a745;
             --danger: #dc3545;
             --bg-gradient: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
@@ -29,6 +33,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         @keyframes gradientBG {
@@ -40,7 +45,7 @@
         .container {
             width: 90%;
             max-width: 500px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(15px);
             padding: 30px;
             border-radius: 30px;
@@ -48,6 +53,38 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.6);
             position: relative;
         }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--secondary);
+            transition: width 0.4s ease;
+        }
+
+        #combo-badge {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: var(--primary);
+            color: black;
+            padding: 10px;
+            border-radius: 50%;
+            font-weight: bold;
+            display: none;
+            transform: rotate(15deg);
+            z-index: 10;
+            animation: bounce 0.5s infinite alternate;
+        }
+
+        @keyframes bounce { from { transform: scale(1) rotate(15deg); } to { transform: scale(1.1) rotate(20deg); } }
 
         .btn-main {
             background: var(--primary);
@@ -64,61 +101,53 @@
             margin-top: 10px;
         }
 
-        .btn-lightning {
-            background: var(--lightning);
-            color: white;
-            box-shadow: 0 5px 0 #6a14a1;
-        }
-
         .btn-main:active { transform: translateY(3px); box-shadow: 0 2px 0 #b38f00; }
-        .btn-lightning:active { box-shadow: 0 2px 0 #6a14a1; }
+        
+        .btn-share { background: #25D366; color: white; box-shadow: 0 5px 0 #128C7E; margin-top: 15px; }
 
-        .progress-container { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: var(--secondary); transition: width 0.4s ease; }
-
-        .option { background: white; color: #333; margin: 10px 0; box-shadow: 0 4px 0 #ccc; }
+        .option { background: white; color: #333; margin: 10px 0; }
         .correct { background: var(--success) !important; color: white !important; }
         .wrong { background: var(--danger) !important; color: white !important; }
 
-        #timer { font-size: 32px; font-weight: 900; }
+        #timer { font-size: 28px; font-weight: 900; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .timer-low { color: #ff4444; animation: shake 0.2s infinite; }
 
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+        @keyframes shake { 0% { transform: translateX(0); } 50% { transform: translateX(-2px); } 100% { transform: translateX(2px); } }
 
-        input { width: 100%; padding: 15px; border-radius: 10px; border: none; margin-bottom: 10px; font-size: 16px; text-align: center; }
-        
-        .leader-row { background: rgba(255,255,255,0.1); padding: 10px; margin: 5px 0; border-radius: 8px; display: flex; justify-content: space-between; font-size: 0.9rem; }
-        .mode-tag { font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,0.2); }
+        input { width: 100%; padding: 15px; border-radius: 10px; border: none; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; }
+
+        .leader-row { background: rgba(255,255,255,0.1); padding: 8px 15px; margin: 5px 0; border-radius: 8px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div id="combo-badge">0x STREAK</div>
+    
     <div id="start-screen">
         <h1>🏆 Trivia Hero</h1>
         <div id="start-leaderboard"></div>
-        <input type="text" id="playerName" placeholder="Hero Name...">
-        <button class="btn-main" onclick="startGame('classic')">Classic Mode (15s)</button>
-        <button class="btn-main btn-lightning" onclick="startGame('lightning')">⚡ LIGHTNING MODE (5s)</button>
+        <input type="text" id="playerName" placeholder="Enter Hero Name...">
+        <button class="btn-main" onclick="startGame()">Battle Start!</button>
     </div>
 
     <div id="game-screen" style="display:none;">
         <div class="progress-container"><div id="progress-bar"></div></div>
         <div id="timer">15</div>
-        <div id="question" style="margin: 20px 0; font-size: 1.2rem; font-weight: bold;"></div>
+        <div id="question" style="margin: 20px 0; font-size: 1.25rem; font-weight: 600;"></div>
         <div id="options"></div>
-        <div id="reaction" style="font-size: 2.5rem; min-height: 50px;"></div>
+        <div id="reaction" style="font-size: 2.5rem; height: 50px;"></div>
     </div>
 
     <div id="result-screen" style="display:none;">
         <h2 id="final-score"></h2>
-        <button class="btn-main" onclick="location.reload()">Back to Menu</button>
+        <button class="btn-main" onclick="location.reload()">Play Again</button>
+        <button class="btn-main btn-share" onclick="shareScore()">Share on WhatsApp 📱</button>
         <div id="leaderboard-final" style="margin-top: 20px;"></div>
     </div>
 </div>
 
 <script>
-// (Questions array stays the same as before)
 const questions = [
     { question: "What is the chemical symbol for Gold?", options: ["Au", "Ag", "Gd", "Go"], answer: 0 },
     { question: "Which planet has the most moons?", options: ["Earth", "Mars", "Jupiter", "Saturn"], answer: 3 },
@@ -147,12 +176,20 @@ const questions = [
     { question: "What does HTML stand for?", options: ["Hyper Text Markup Language", "High Tech Modern Language", "Hyperlink Text", "Home Tool"], answer: 0 }
 ];
 
-let currentQuestion = 0, score = 0, timer, timeLeft = 15, playerName = "", gameMode = "classic";
+let currentQuestion = 0, score = 0, streak = 0, timer, timeLeft = 15, playerName = "";
 
-function startGame(mode) {
+function checkDailyReset() {
+    const lastReset = localStorage.getItem("lastResetDate");
+    const now = new Date().getTime();
+    if (!lastReset || (now - lastReset) > 86400000) {
+        localStorage.setItem("leaderboard", JSON.stringify([]));
+        localStorage.setItem("lastResetDate", now);
+    }
+}
+
+function startGame() {
     playerName = document.getElementById("playerName").value.trim();
-    if (!playerName) return alert("Identify yourself, Hero!");
-    gameMode = mode;
+    if (!playerName) return alert("Enter your Hero name!");
     questions.sort(() => Math.random() - 0.5);
     document.getElementById("start-screen").style.display = "none";
     document.getElementById("game-screen").style.display = "block";
@@ -160,7 +197,7 @@ function startGame(mode) {
 }
 
 function loadQuestion() {
-    timeLeft = gameMode === 'lightning' ? 5 : 15;
+    timeLeft = 15;
     resetTimer();
     const q = questions[currentQuestion];
     document.getElementById("question").innerText = q.question;
@@ -172,4 +209,88 @@ function loadQuestion() {
         btn.innerText = opt;
         btn.className = "btn-main option";
         btn.onclick = () => checkAnswer(i, btn);
-        optionsDiv
+        optionsDiv.appendChild(btn);
+    });
+}
+
+function checkAnswer(idx, btn) {
+    clearInterval(timer);
+    const correct = questions[currentQuestion].answer;
+    const all = document.querySelectorAll(".option");
+    all.forEach(b => b.style.pointerEvents = "none");
+
+    if (idx === correct) {
+        btn.classList.add("correct");
+        // NEW: Fast Answer Bonus (timeLeft x 2) + Streak
+        let points = 10 + (timeLeft * 2) + (streak * 5);
+        score += points;
+        streak++;
+        document.getElementById("reaction").innerText = timeLeft > 10 ? "⚡ FAST!" : "🔥 NICE!";
+        if (streak >= 3) {
+            document.getElementById("combo-badge").style.display = "block";
+            document.getElementById("combo-badge").innerText = streak + "x STREAK";
+        }
+    } else {
+        btn.classList.add("wrong");
+        all[correct].classList.add("correct");
+        streak = 0;
+        document.getElementById("combo-badge").style.display = "none";
+        document.getElementById("reaction").innerText = "😵 OUCH";
+    }
+
+    setTimeout(() => {
+        currentQuestion++;
+        currentQuestion < questions.length ? loadQuestion() : endGame();
+    }, 1200);
+}
+
+function resetTimer() {
+    clearInterval(timer);
+    const timerDisplay = document.getElementById("timer");
+    timerDisplay.classList.remove("timer-low");
+    timerDisplay.innerText = timeLeft;
+    timer = setInterval(() => {
+        timeLeft--;
+        timerDisplay.innerText = timeLeft;
+        if (timeLeft <= 5) timerDisplay.classList.add("timer-low");
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            streak = 0;
+            currentQuestion++;
+            currentQuestion < questions.length ? loadQuestion() : endGame();
+        }
+    }, 1000);
+}
+
+function endGame() {
+    document.getElementById("game-screen").style.display = "none";
+    document.getElementById("result-screen").style.display = "block";
+    document.getElementById("final-score").innerText = `${playerName}, Final Score: ${score}`;
+    saveScore();
+    showLeaderboards();
+}
+
+function saveScore() {
+    let lb = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    lb.push({ name: playerName, score: score });
+    lb.sort((a, b) => b.score - a.score);
+    localStorage.setItem("leaderboard", JSON.stringify(lb));
+}
+
+function showLeaderboards() {
+    const lb = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    const html = lb.slice(0, 5).map((p, i) => `<div class="leader-row"><span>#${i+1} ${p.name}</span><span>${p.score}</span></div>`).join('');
+    document.getElementById("start-leaderboard").innerHTML = lb.length ? "<h3>Daily Top 5</h3>" + html : "<h3>Be the first Hero!</h3>";
+    document.getElementById("leaderboard-final").innerHTML = "<h3>Daily Rankings</h3>" + html;
+}
+
+function shareScore() {
+    const text = `🎮 I just scored ${score} on Trivia Hero! My speed bonus was insane. 🔥 Can you beat me? Play here: ${window.location.href}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+checkDailyReset();
+showLeaderboards();
+</script>
+</body>
+</html>
