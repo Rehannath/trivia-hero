@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia Hero | Daily Challenge</title>
+    
+    <meta name="description" content="Play the Ultimate Trivia Hero challenge! 25 questions, daily leaderboard, and epic streaks.">
+    <meta property="og:title" content="Trivia Hero Challenge">
+    <meta property="og:description" content="Can you beat my high score? Play now!">
+    <meta property="og:type" content="website">
+
+    <style>
+        :root {
+            --primary: #ffcc00;
+            --secondary: #00d4ff;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg-gradient: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            text-align: center;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            position: relative;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--secondary);
+            transition: width 0.4s ease;
+        }
+
+        #combo-badge {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: var(--primary);
+            color: black;
+            padding: 10px;
+            border-radius: 50%;
+            font-weight: bold;
+            display: none;
+            transform: rotate(15deg);
+            z-index: 10;
+        }
+
+        .btn-main {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 5px 0 #b38f00;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-main:active { transform: translateY(3px); box-shadow: 0 2px 0 #b38f00; }
+        
+        .btn-share {
+            background: #25D366;
+            color: white;
+            box-shadow: 0 5px 0 #128C7E;
+            margin-top: 15px;
+        }
+
+        .option { background: white; color: #333; margin: 10px 0; }
+        .correct { background: var(--success) !important; color: white !important; }
+        .wrong { background: var(--danger) !important; color: white !important; }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            margin-bottom: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .leader-row {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="combo-badge">0x STREAK</div>
+    
+    <div id="start-screen">
+        <h1>🏆 Trivia Hero</h1>
+        <div id="start-leaderboard"></div>
+        <input type="text" id="playerName" placeholder="Enter Hero Name...">
+        <button class="btn-main" onclick="startGame()">Battle Start!</button>
+    </div>
+
+    <div id="game-screen" style="display:none;">
+        <div class="progress-container"><div id="progress-bar"></div></div>
+        <div id="timer" style="font-size: 24px; font-weight: bold;">15</div>
+        <div id="question" style="margin: 20px 0; font-size: 1.2rem;"></div>
+        <div id="options"></div>
+        <div id="reaction" style="font-size: 2rem;"></div>
+    </div>
+
+    <div id="result-screen" style="display:none;">
+        <h2 id="final-score"></h2>
+        <button class="btn-main" onclick="location.reload()">Play Again</button>
+        <button class="btn-main btn-share" onclick="shareScore()">Share on WhatsApp 📱</button>
+        <div id="leaderboard-final" style="margin-top: 20px;"></div>
+    </div>
+</div>
+
+<script>
+const questions = [
+    { question: "What is the chemical symbol for Gold?", options: ["Au", "Ag", "Gd", "Go"], answer: 0 },
+    { question: "Which planet has the most moons?", options: ["Earth", "Mars", "Jupiter", "Saturn"], answer: 3 },
+    { question: "Who wrote 'Romeo and Juliet'?", options: ["Charles Dickens", "William Shakespeare", "Mark Twain", "Jane Austen"], answer: 1 },
+    { question: "What is the square root of 144?", options: ["10", "11", "12", "14"], answer: 2 },
+    { question: "Which country hosted the 2020 Olympics?", options: ["China", "Japan", "Brazil", "UK"], answer: 1 },
+    { question: "What gas do plants absorb?", options: ["Oxygen", "Nitrogen", "CO2", "Hydrogen"], answer: 2 },
+    { question: "Father of Computers?", options: ["Alan Turing", "Bill Gates", "Charles Babbage", "Steve Jobs"], answer: 2 },
+    { question: "Largest continent?", options: ["Africa", "Asia", "Europe", "North America"], answer: 1 },
+    { question: "What is 25 × 4?", options: ["100", "90", "75", "110"], answer: 0 },
+    { question: "Deepest ocean?", options: ["Atlantic", "Indian", "Pacific", "Arctic"], answer: 2 },
+    { question: "Hardest natural substance?", options: ["Iron", "Gold", "Diamond", "Quartz"], answer: 2 },
+    { question: "Home of Great Pyramid of Giza?", options: ["Mexico", "Egypt", "Peru", "India"], answer: 1 },
+    { question: "Who painted the Mona Lisa?", options: ["Van Gogh", "Picasso", "Da Vinci", "Michelangelo"], answer: 2 },
+    { question: "Boiling point of water?", options: ["90°C", "95°C", "100°C", "110°C"], answer: 2 },
+    { question: "Language of the web?", options: ["Python", "C++", "JavaScript", "Java"], answer: 2 },
+    { question: "What organ pumps blood?", options: ["Liver", "Brain", "Heart", "Lungs"], answer: 2 },
+    { question: "Currency of the UK?", options: ["Euro", "Dollar", "Pound", "Franc"], answer: 2 },
+    { question: "Atomic number 1?", options: ["Helium", "Hydrogen", "Oxygen", "Nitrogen"], answer: 1 },
+    { question: "Who discovered gravity?", options: ["Einstein", "Galileo", "Newton", "Tesla"], answer: 2 },
+    { question: "Largest mammal?", options: ["Elephant", "Blue Whale", "Giraffe", "Hippo"], answer: 1 },
+    { question: "Who invented paper?", options: ["India", "Greece", "China", "Egypt"], answer: 2 },
+    { question: "What is 7²?", options: ["42", "49", "56", "64"], answer: 1 },
+    { question: "Closest planet to Sun?", options: ["Venus", "Earth", "Mercury", "Mars"], answer: 2 },
+    { question: "Universal blood donor?", options: ["A", "B", "AB", "O"], answer: 3 },
+    { question: "What does HTML stand for?", options: ["Hyper Text Markup Language", "High Tech Modern Language", "Hyperlink Text", "Home Tool"], answer: 0 }
+];
+
+let currentQuestion = 0, score = 0, streak = 0, timer, timeLeft = 15, playerName = "";
+
+function checkDailyReset() {
+    const lastReset = localStorage.getItem("lastResetDate");
+    const now = new Date().getTime();
+    if (!lastReset || (now - lastReset) > 86400000) {
+        localStorage.setItem("leaderboard", JSON.stringify([]));
+        localStorage.setItem("lastResetDate", now);
+    }
+}
+
+function startGame() {
+    playerName = document.getElementById("playerName").value.trim();
+    if (!playerName) return alert("Enter your Hero name!");
+    questions.sort(() => Math.random() - 0.5);
+    document.getElementById("start-screen").style.display = "none";
+    document.getElementById("game-screen").style.display = "block";
+    loadQuestion();
+}
+
+function loadQuestion() {
+    timeLeft = 15;
+    resetTimer();
+    const q = questions[currentQuestion];
+    document.getElementById("question").innerText = q.question;
+    document.getElementById("progress-bar").style.width = (currentQuestion / questions.length) * 100 + "%";
+    const optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+    q.options.forEach((opt, i) => {
+        const btn = document.createElement("button");
+        btn.innerText = opt;
+        btn.className = "btn-main option";
+        btn.onclick = () => checkAnswer(i, btn);
+        optionsDiv.appendChild(btn);
+    });
+}
+
+function checkAnswer(idx, btn) {
+    clearInterval(timer);
+    const correct = questions[currentQuestion].answer;
+    const all = document.querySelectorAll(".option");
+    all.forEach(b => b.style.pointerEvents = "none");
+
+    if (idx === correct) {
+        btn.classList.add("correct");
+        score += (10 + streak);
+        streak++;
+        document.getElementById("reaction").innerText = "🔥";
+        if (streak >= 3) {
+            document.getElementById("combo-badge").style.display = "block";
+            document.getElementById("combo-badge").innerText = streak + "x!";
+        }
+    } else {
+        btn.classList.add("wrong");
+        all[correct].classList.add("correct");
+        streak = 0;
+        document.getElementById("combo-badge").style.display = "none";
+        document.getElementById("reaction").innerText = "😵";
+    }
+
+    setTimeout(() => {
+        currentQuestion++;
+        currentQuestion < questions.length ? loadQuestion() : endGame();
+    }, 1200);
+}
+
+function resetTimer() {
+    clearInterval(timer);
+    document.getElementById("timer").innerText = timeLeft;
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").innerText = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            streak = 0;
+            currentQuestion++;
+            currentQuestion < questions.length ? loadQuestion() : endGame();
+        }
+    }, 1000);
+}
+
+function endGame() {
+    document.getElementById("game-screen").style.display = "none";
+    document.getElementById("result-screen").style.display = "block";
+    document.getElementById("final-score").innerText = `${playerName}, Score: ${score}`;
+    saveScore();
+    showLeaderboards();
+}
+
+function saveScore() {
+    let lb = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    lb.push({ name: playerName, score: score });
+    lb.sort((a, b) => b.score - a.score);
+    localStorage.setItem("leaderboard", JSON.stringify(lb));
+}
+
+function showLeaderboards() {
+    const lb = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    const html = lb.slice(0, 5).map((p, i) => `<div class="leader-row"><span>#${i+1} ${p.name}</span><span>${p.score}</span></div>`).join('');
+    document.getElementById("start-leaderboard").innerHTML = lb.length ? "<h3>Daily Top 5</h3>" + html : "";
+    document.getElementById("leaderboard-final").innerHTML = "<h3>Daily Rankings</h3>" + html;
+}
+
+function shareScore() {
+    const text = `🎮 I just scored ${score} on Trivia Hero! Can you beat my streak? 🔥 Play here: ${window.location.href}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+checkDailyReset();
+showLeaderboards();
+</script>
+</body>
+</html>
